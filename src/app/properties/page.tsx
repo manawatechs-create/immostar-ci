@@ -4,9 +4,10 @@ import { useState, useEffect } from 'react'
 import { Navbar } from '@/components/common/Navbar'
 import { Footer } from '@/components/common/Footer'
 import Link from 'next/link'
-import { FaMapMarkerAlt, FaBed, FaBath, FaRulerCombined, FaSearch } from 'react-icons/fa'
+import { FaMapMarkerAlt, FaSearch, FaPhone } from 'react-icons/fa'
 
 export default function PropertiesPage() {
+  const [mounted, setMounted] = useState(false)
   const [listings, setListings] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
@@ -14,6 +15,7 @@ export default function PropertiesPage() {
   const [typeFilter, setTypeFilter] = useState('')
 
   useEffect(() => {
+    setMounted(true)
     fetchListings()
   }, [cityFilter, typeFilter])
 
@@ -34,10 +36,23 @@ export default function PropertiesPage() {
     }
   }
 
-  const filtered = listings.filter(l => 
-    l.title?.toLowerCase().includes(search.toLowerCase()) ||
-    l.city?.toLowerCase().includes(search.toLowerCase())
-  )
+  const filtered = search
+    ? listings.filter(l => 
+        l.title?.toLowerCase().includes(search.toLowerCase()) ||
+        l.city?.toLowerCase().includes(search.toLowerCase()) ||
+        l.district?.toLowerCase().includes(search.toLowerCase())
+      )
+    : listings
+
+  const formatPrice = (price: number) => {
+    if (!price) return '0 FCFA'
+    if (price >= 1000000) return `${(price / 1000000).toFixed(0)}M FCFA`
+    return price.toLocaleString() + ' FCFA'
+  }
+
+  if (!mounted) {
+    return <div className="min-h-screen"><Navbar /><div className="flex justify-center py-20"><span className="loader" /></div><Footer /></div>
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -47,10 +62,11 @@ export default function PropertiesPage() {
         <section className="bg-gradient-to-r from-orange-500 to-orange-600 text-white py-8">
           <div className="container-main">
             <h1 className="text-2xl sm:text-3xl font-black mb-2">🏠 Annonces immobilières</h1>
-            <p className="text-orange-100 text-sm">{listings.length} annonce(s) disponible(s)</p>
+            <p className="text-orange-100 text-sm">{listings.length} annonce(s)</p>
           </div>
         </section>
 
+        {/* Filtres */}
         <section className="container-main -mt-6 relative z-20 mb-8">
           <div className="bg-white rounded-2xl shadow-xl p-4">
             <div className="flex flex-col sm:flex-row gap-3">
@@ -76,6 +92,7 @@ export default function PropertiesPage() {
           </div>
         </section>
 
+        {/* Liste des annonces */}
         <section className="container-main mb-12">
           {loading ? (
             <div className="flex justify-center py-20"><span className="loader" /></div>
@@ -89,33 +106,52 @@ export default function PropertiesPage() {
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
               {filtered.map(listing => (
-                <Link key={listing.id} href={`/properties/${listing.id}`}
-                  className="bg-white rounded-2xl shadow-sm overflow-hidden hover:shadow-lg hover:-translate-y-1 transition-all group">
+                <div key={listing.id} className="bg-white rounded-2xl shadow-sm overflow-hidden hover:shadow-lg hover:-translate-y-1 transition-all group">
+                  {/* Image */}
                   <div className="h-48 bg-gradient-to-br from-orange-100 to-orange-200 flex items-center justify-center relative">
-                    <span className="text-5xl">
-                      {listing.category === 'villa' ? '🏡' : listing.category === 'apartment' ? '🏢' : listing.category === 'land' ? '🌳' : '🏠'}
-                    </span>
-                    <span className={`absolute top-3 left-3 px-2 py-1 rounded-full text-xs font-bold text-white ${listing.type === 'sale' ? 'bg-blue-600' : 'bg-green-600'}`}>
+                    {listing.images && listing.images.length > 0 ? (
+                      <img src={listing.images[0]} alt={listing.title} className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="text-5xl">
+                        {listing.category === 'villa' ? '🏡' : 
+                         listing.category === 'apartment' ? '🏢' : 
+                         listing.category === 'land' ? '🌳' : '🏠'}
+                      </span>
+                    )}
+                    <span className={`absolute top-3 left-3 px-2.5 py-1 rounded-full text-xs font-bold text-white ${listing.type === 'sale' ? 'bg-blue-600' : 'bg-green-600'}`}>
                       {listing.type === 'sale' ? 'À vendre' : 'À louer'}
                     </span>
+                    <span className="absolute top-3 right-3 bg-white/90 px-2 py-1 rounded-full text-xs font-bold">
+                      #{listing.id}
+                    </span>
                   </div>
+                  
+                  {/* Infos */}
                   <div className="p-4">
                     <h3 className="font-bold text-gray-800 text-sm truncate">{listing.title}</h3>
                     <p className="text-xs text-gray-500 flex items-center gap-1 mt-1">
-                      <FaMapMarkerAlt className="text-orange-500" />
+                      <FaMapMarkerAlt className="text-orange-500 flex-shrink-0" />
                       {listing.city}{listing.district ? `, ${listing.district}` : ''}
                     </p>
-                    <div className="flex items-end justify-between mt-3">
-                      <span className="text-lg font-black text-orange-600">
-                        {listing.price ? parseInt(listing.price).toLocaleString() : '0'} FCFA
-                        {listing.type === 'rent' && <span className="text-xs font-normal text-gray-500">/mois</span>}
-                      </span>
-                      <span className="text-xs bg-orange-50 text-orange-600 px-3 py-1.5 rounded-full font-semibold group-hover:bg-orange-600 group-hover:text-white transition-all">
-                        Voir →
-                      </span>
+                    
+                    {listing.description && (
+                      <p className="text-xs text-gray-400 mt-1 truncate">{listing.description}</p>
+                    )}
+                    
+                    <div className="flex items-end justify-between mt-3 pt-3 border-t">
+                      <div>
+                        <span className="text-lg font-black text-orange-600">{formatPrice(listing.price)}</span>
+                        {listing.type === 'rent' && <span className="text-xs text-gray-500">/mois</span>}
+                      </div>
+                      {listing.phone && (
+                        <a href={`tel:${listing.phone}`} 
+                          className="flex items-center gap-1 bg-green-500 text-white px-3 py-1.5 rounded-full text-xs font-bold hover:bg-green-600 transition-colors">
+                          <FaPhone className="text-xs" /> Appeler
+                        </a>
+                      )}
                     </div>
                   </div>
-                </Link>
+                </div>
               ))}
             </div>
           )}
