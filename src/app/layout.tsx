@@ -4,7 +4,11 @@ import { AnalyticsTracker } from '@/components/analytics/Tracker'
 
 export const metadata: Metadata = {
   title: 'ImmoStar | La star de l\'immobilier en Côte d\'Ivoire',
-  description: 'Trouvez votre maison de rêve en Côte d\'Ivoire avec ImmoStar.',
+  description: 'Trouvez votre maison de rêve en Côte d\'Ivoire avec ImmoStar. Achat, vente, location.',
+  keywords: 'immobilier, Côte d\'Ivoire, Abidjan, ImmoStar, maison, appartement, villa, meublé',
+  authors: [{ name: 'Manawa Techs' }],
+  creator: 'Manawa Techs',
+  publisher: 'Manawa Techs',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

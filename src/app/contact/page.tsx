@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { Navbar } from '@/components/common/Navbar'
 import { Footer } from '@/components/common/Footer'
-import { FaPhone, FaEnvelope, FaMapMarkerAlt, FaWhatsapp, FaPaperPlane, FaClock } from 'react-icons/fa'
+import { FaPhone, FaEnvelope, FaMapMarkerAlt, FaWhatsapp, FaPaperPlane } from 'react-icons/fa'
 
 export default function ContactPage() {
   const [form, setForm] = useState({ name: '', email: '', phone: '', subject: '', message: '' })
@@ -22,10 +22,10 @@ export default function ContactPage() {
   }
 
   const contacts = [
-    { icon: FaPhone, title: 'Téléphone', info: '+225 07 00 00 00 00', sub: 'Lun-Ven 8h-18h', color: 'bg-orange-100 text-orange-600' },
-    { icon: FaWhatsapp, title: 'WhatsApp', info: '+225 07 00 00 00 00', sub: 'Réponse rapide', color: 'bg-green-100 text-green-600' },
-    { icon: FaEnvelope, title: 'Email', info: 'contact@immostar.ci', sub: 'Sous 24h', color: 'bg-blue-100 text-blue-600' },
-    { icon: FaMapMarkerAlt, title: 'Adresse', info: 'Cocody, Abidjan', sub: 'Côte d\'Ivoire', color: 'bg-red-100 text-red-600' },
+    { icon: FaPhone, title: 'Téléphone', info: '+225 07 08 43 21 72', sub: 'Lun-Sam 8h-18h', color: 'bg-orange-100 text-orange-600', href: 'tel:+2250708432172' },
+    { icon: FaWhatsapp, title: 'WhatsApp', info: '+225 07 08 43 21 72', sub: 'Réponse rapide', color: 'bg-green-100 text-green-600', href: 'https://wa.me/2250708432172' },
+    { icon: FaEnvelope, title: 'Email', info: 'manawatechs@gmail.com', sub: 'Sous 24h', color: 'bg-blue-100 text-blue-600', href: 'mailto:manawatechs@gmail.com' },
+    { icon: FaMapMarkerAlt, title: 'Adresse', info: 'Cocody, Abidjan', sub: 'Côte d\'Ivoire', color: 'bg-red-100 text-red-600', href: '#' },
   ]
 
   return (
@@ -35,7 +35,7 @@ export default function ContactPage() {
         <section className="bg-gradient-to-r from-orange-500 to-orange-600 text-white py-12">
           <div className="container-main text-center">
             <h1 className="text-3xl sm:text-4xl font-black mb-2">📞 Contactez-nous</h1>
-            <p className="text-orange-100">L&apos;équipe ImmoStar est à votre écoute</p>
+            <p className="text-orange-100">L&apos;équipe Manawa Techs est à votre écoute</p>
           </div>
         </section>
 
@@ -43,7 +43,8 @@ export default function ContactPage() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="space-y-3">
               {contacts.map((item, i) => (
-                <div key={i} className="bg-white rounded-2xl shadow-sm p-4 flex items-center gap-4">
+                <a key={i} href={item.href} target={item.href.startsWith('http') ? '_blank' : undefined}
+                  className="bg-white rounded-2xl shadow-sm p-4 flex items-center gap-4 hover:shadow-md transition-all">
                   <div className={`w-10 h-10 rounded-xl ${item.color} flex items-center justify-center flex-shrink-0`}>
                     <item.icon className="text-lg" />
                   </div>
@@ -52,7 +53,7 @@ export default function ContactPage() {
                     <div className="text-sm text-gray-600">{item.info}</div>
                     <div className="text-xs text-gray-400">{item.sub}</div>
                   </div>
-                </div>
+                </a>
               ))}
             </div>
 
