@@ -3,79 +3,61 @@
 import { useState } from 'react'
 import { Navbar } from '@/components/common/Navbar'
 import { Footer } from '@/components/common/Footer'
-import { FaCamera, FaCheckCircle, FaWhatsapp, FaPhone } from 'react-icons/fa'
+import { FaCamera, FaCheckCircle } from 'react-icons/fa'
 import Link from 'next/link'
 
 export default function PublierPage() {
   const [step, setStep] = useState(1)
   const [success, setSuccess] = useState(false)
   const [loading, setLoading] = useState(false)
-  const [images, setImages] = useState<string[]>([])
-  const [showSMS, setShowSMS] = useState(false)
-  const [smsCode, setSmsCode] = useState('')
-  const [verified, setVerified] = useState(false)
+  const [publishedListing, setPublishedListing] = useState<any>(null)
 
   const [form, setForm] = useState({
     title: '',
     price: '',
     city: 'Abidjan',
-    phone: '',
-    description: '',
+    district: '',
     category: 'house',
     type: 'sale',
+    phone: '',
+    description: '',
+    images: []
   })
 
-  const handleImageAdd = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files
-    if (files) {
-      Array.from(files).forEach(file => {
-        const reader = new FileReader()
-        reader.onload = (e) => {
-          setImages(prev => [...prev, e.target?.result as string].slice(0, 8))
-        }
-        reader.readAsDataURL(file)
-      })
-    }
-  }
-
-  const handleSendSMS = () => {
-    if (form.phone.length < 8) {
-      alert('Veuillez entrer un numéro valide')
-      return
-    }
-    setShowSMS(true)
-    // Simuler l'envoi SMS
-    console.log('📱 Code envoyé au ' + form.phone)
-  }
-
-  const handleVerifySMS = () => {
-    if (smsCode === '1234') {
-      setVerified(true)
-      setShowSMS(false)
-    } else {
-      alert('Code incorrect. Essayez 1234 (démo)')
-    }
-  }
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (step === 1) {
-      if (!verified) {
-        alert('Veuillez vérifier votre numéro de téléphone')
-        return
-      }
       setStep(2)
       window.scrollTo(0, 0)
-    } else {
-      setLoading(true)
-      setTimeout(() => {
-        setLoading(false)
+      return
+    }
+
+    setLoading(true)
+
+    try {
+      const response = await fetch('/api/listings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form)
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        setPublishedListing(data.listing)
         setSuccess(true)
-      }, 1500)
+      } else {
+        alert('Erreur lors de la publication')
+      }
+    } catch (error) {
+      console.error('Erreur:', error)
+      alert('Erreur de connexion')
+    } finally {
+      setLoading(false)
     }
   }
 
-  if (success) {
+  if (success && publishedListing) {
     return (
       <div className="min-h-screen bg-gray-50">
         <Navbar />
@@ -84,30 +66,27 @@ export default function PublierPage() {
             <FaCheckCircle className="text-6xl text-green-500 mx-auto mb-4" />
             <h1 className="text-2xl font-bold text-gray-800 mb-2">🎉 Annonce publiée !</h1>
             <p className="text-gray-500 mb-6">
-              Votre annonce <strong>{form.title}</strong> est en ligne !
+              Votre annonce <strong>{publishedListing.title}</strong> est en ligne !
             </p>
             
             <div className="bg-white rounded-2xl shadow-sm p-6 mb-6 text-left space-y-3 text-sm">
-              <p>✅ <strong>Titre :</strong> {form.title}</p>
-              <p>✅ <strong>Prix :</strong> {parseInt(form.price).toLocaleString()} FCFA</p>
-              <p>✅ <strong>Ville :</strong> {form.city}</p>
-              <p>✅ <strong>Contact :</strong> {form.phone}</p>
-              <p>✅ <strong>Photos :</strong> {images.length}</p>
-              
-              <div className="border-t pt-3 mt-3">
-                <p className="font-bold text-orange-600">📞 Les acheteurs vous contacteront directement</p>
-                <p className="text-xs text-gray-500 mt-1">Votre numéro est visible sur l'annonce</p>
-              </div>
+              <p>✅ <strong>Référence :</strong> #{publishedListing.id}</p>
+              <p>✅ <strong>Titre :</strong> {publishedListing.title}</p>
+              <p>✅ <strong>Prix :</strong> {parseInt(publishedListing.price).toLocaleString()} FCFA</p>
+              <p>✅ <strong>Ville :</strong> {publishedListing.city}</p>
+              <p>✅ <strong>Contact :</strong> {publishedListing.phone}</p>
             </div>
 
             <div className="flex flex-col gap-2">
-              <Link href="/publier" className="btn-primary" onClick={() => {
-                setSuccess(false); setStep(1); setImages([]); setVerified(false);
-                setForm({title:'',price:'',city:'Abidjan',phone:'',description:'',category:'house',type:'sale'})
-              }}>
-                ➕ Publier une autre annonce
+              <Link href="/properties" className="btn-primary">
+                👁️ Voir les annonces
               </Link>
-              <Link href="/" className="btn-outline">🏠 Accueil</Link>
+              <Link href="/publier" className="btn-outline" onClick={() => {
+                setSuccess(false); setStep(1);
+                setForm({title:'',price:'',city:'Abidjan',district:'',category:'house',type:'sale',phone:'',description:'',images:[]})
+              }}>
+                ➕ Nouvelle annonce
+              </Link>
             </div>
           </div>
         </main>
@@ -137,13 +116,12 @@ export default function PublierPage() {
 
           <div className="bg-white rounded-2xl shadow-sm p-6">
             <h1 className="text-xl font-bold text-gray-800 mb-4">
-              {step === 1 ? '📝 Publier une annonce gratuite' : '📸 Ajouter des photos'}
+              📝 Publier une annonce gratuite
             </h1>
 
             <form onSubmit={handleSubmit} className="space-y-4">
               {step === 1 ? (
                 <>
-                  {/* Catégorie et Type */}
                   <div className="grid grid-cols-2 gap-3">
                     <select className="input-field text-sm" value={form.category} onChange={e => setForm({...form, category: e.target.value})}>
                       <option value="house">🏠 Maison</option>
@@ -158,108 +136,57 @@ export default function PublierPage() {
                     </select>
                   </div>
 
-                  {/* Titre */}
                   <input type="text" required className="input-field" placeholder="Titre de l'annonce *"
                     value={form.title} onChange={e => setForm({...form, title: e.target.value})} />
 
-                  {/* Prix */}
                   <input type="number" required className="input-field" placeholder="Prix en FCFA *"
                     value={form.price} onChange={e => setForm({...form, price: e.target.value})} />
 
-                  {/* Ville */}
-                  <select className="input-field" value={form.city} onChange={e => setForm({...form, city: e.target.value})}>
-                    <option>Abidjan</option><option>Yamoussoukro</option><option>Bouaké</option>
-                    <option>Grand-Bassam</option><option>San Pedro</option><option>Daloa</option>
-                  </select>
+                  <div className="grid grid-cols-2 gap-3">
+                    <select className="input-field" value={form.city} onChange={e => setForm({...form, city: e.target.value})}>
+                      <option>Abidjan</option><option>Yamoussoukro</option><option>Bouaké</option>
+                      <option>Grand-Bassam</option><option>San Pedro</option>
+                    </select>
+                    <input type="text" className="input-field" placeholder="Quartier"
+                      value={form.district} onChange={e => setForm({...form, district: e.target.value})} />
+                  </div>
 
-                  {/* Description */}
                   <textarea rows={3} className="input-field" placeholder="Description (optionnel)"
                     value={form.description} onChange={e => setForm({...form, description: e.target.value})} />
 
-                  {/* Téléphone avec vérification SMS */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Votre numéro *</label>
-                    <div className="flex gap-2">
-                      <input type="tel" required className="input-field flex-1" placeholder="+225 07 00 00 00"
-                        value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} />
-                      <button type="button" onClick={handleSendSMS}
-                        className={`px-4 py-2.5 rounded-xl text-sm font-medium whitespace-nowrap ${
-                          verified ? 'bg-green-500 text-white' : 'bg-orange-500 text-white hover:bg-orange-600'
-                        }`}>
-                        {verified ? '✅ Vérifié' : '📱 Vérifier'}
-                      </button>
-                    </div>
-                    {verified && <p className="text-xs text-green-600 mt-1">✅ Numéro vérifié</p>}
-                  </div>
+                  <input type="tel" required className="input-field" placeholder="Votre numéro *"
+                    value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} />
 
-                  {/* Modal SMS */}
-                  {showSMS && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-                      <div className="bg-white rounded-2xl p-6 max-w-sm w-full">
-                        <h3 className="font-bold text-lg mb-2">📱 Vérification SMS</h3>
-                        <p className="text-sm text-gray-500 mb-4">
-                          Un code a été envoyé au <strong>{form.phone}</strong>
-                        </p>
-                        <input type="text" className="input-field mb-3" placeholder="Code reçu (1234 en démo)"
-                          value={smsCode} onChange={e => setSmsCode(e.target.value)} />
-                        <button onClick={handleVerifySMS} className="btn-primary w-full">
-                          Vérifier le code
-                        </button>
-                        <p className="text-xs text-gray-400 text-center mt-2">Code démo : 1234</p>
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="bg-orange-50 border border-orange-200 rounded-xl p-3 text-xs text-orange-800">
-                    🆓 <strong>Publication 100% gratuite</strong> • Votre numéro sera visible sur l'annonce
+                  <div className="bg-green-50 border border-green-200 rounded-xl p-3 text-xs text-green-800">
+                    🆓 <strong>Publication 100% gratuite</strong> • Visible immédiatement
                   </div>
                 </>
               ) : (
                 <>
-                  {/* Upload Photos */}
-                  <div className="border-2 border-dashed border-gray-300 rounded-2xl p-6 text-center hover:border-orange-400 transition-colors">
-                    <input type="file" multiple accept="image/*" onChange={handleImageAdd} className="hidden" id="photoUpload" />
+                  <div className="border-2 border-dashed border-gray-300 rounded-2xl p-8 text-center">
+                    <input type="file" multiple accept="image/*" className="hidden" id="photoUpload" />
                     <label htmlFor="photoUpload" className="cursor-pointer">
                       <FaCamera className="text-4xl text-gray-400 mx-auto mb-2" />
                       <p className="font-medium text-gray-700">Ajouter des photos</p>
-                      <p className="text-xs text-gray-400">Jusqu'à 8 photos</p>
+                      <p className="text-xs text-gray-400">Optionnel - Jusqu'à 8 photos</p>
                     </label>
                   </div>
 
-                  {/* Prévisualisation */}
-                  {images.length > 0 && (
-                    <div className="grid grid-cols-4 gap-2">
-                      {images.map((img, i) => (
-                        <div key={i} className="relative">
-                          <img src={img} alt="" className="w-full h-20 object-cover rounded-lg" />
-                          <button type="button" onClick={() => setImages(images.filter((_, j) => j !== i))}
-                            className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full text-xs">✕</button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  <p className="text-xs text-gray-500">📸 {images.length}/8 photos</p>
+                  <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 text-xs text-blue-800">
+                    📸 Les annonces avec photos reçoivent 5x plus de contacts
+                  </div>
                 </>
               )}
 
-              {/* Boutons */}
               <div className="flex gap-3 pt-2">
                 {step === 2 && (
-                  <button type="button" onClick={() => setStep(1)} className="btn-outline flex-1">
-                    ← Retour
-                  </button>
+                  <button type="button" onClick={() => setStep(1)} className="btn-outline flex-1">← Retour</button>
                 )}
                 <button type="submit" disabled={loading} className="btn-primary flex-1">
                   {loading ? '⏳...' : step === 1 ? 'Continuer →' : '📝 Publier gratuitement'}
                 </button>
               </div>
             </form>
-          </div>
-
-          {/* Aide */}
-          <div className="mt-4 text-center">
-            <p className="text-sm text-gray-500">📞 Besoin d'aide ? <a href="tel:+2250700000000" className="text-orange-600 font-semibold">Appelez-nous</a></p>
           </div>
         </div>
       </main>
