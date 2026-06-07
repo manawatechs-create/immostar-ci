@@ -19,6 +19,8 @@ const menuItems = [
   { href: '/admin/users', label: '👥 Utilisateurs', icon: FaUsers, color: 'text-indigo-500' },
   { href: '/admin/commissions', label: '💰 Commissions', icon: FaMoneyBill, color: 'text-yellow-500' },
   { href: '/admin/messages', label: 'Messages', icon: FaEnvelope, color: 'text-cyan-500' },
+    { href: "/admin/profile", label: "👤 Profil", icon: FaUser },
+    { href: "/admin/revenue", label: "📊 Revenus", icon: FaChartLine },
   { href: '/admin/settings', label: 'Paramètres', icon: FaCog, color: 'text-gray-500' },
 ]
 

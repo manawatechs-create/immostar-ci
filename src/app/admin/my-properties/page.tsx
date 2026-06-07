@@ -1,179 +1,131 @@
 'use client'
 
 import { useState } from 'react'
-import { FaEye, FaPhone, FaWhatsapp, FaChartLine, FaEdit, FaTrash, FaPlus, FaHome, FaCheckCircle } from 'react-icons/fa'
+import { FaSearch, FaEdit, FaEye, FaToggleOn, FaToggleOff, FaTrash, FaDownload, FaPlus } from 'react-icons/fa'
 import Link from 'next/link'
 
 export default function MyPropertiesPage() {
-  const [activeTab, setActiveTab] = useState('active')
+  const [search, setSearch] = useState('')
+  const [filter, setFilter] = useState('all')
 
-  const myProperties = [
-    {
-      id: 1,
-      title: 'Villa Moderne Cocody',
-      price: '85 000 000 FCFA',
-      status: 'active',
-      views: 1234,
-      calls: 45,
-      whatsapp: 23,
-      favorites: 12,
-      publishedDate: '2025-01-15',
-      expiresIn: 45,
-    },
-    {
-      id: 2,
-      title: 'Appartement Plateau',
-      price: '450 000 FCFA/mois',
-      status: 'active',
-      views: 567,
-      calls: 18,
-      whatsapp: 9,
-      favorites: 5,
-      publishedDate: '2025-01-10',
-      expiresIn: 40,
-    },
-    {
-      id: 3,
-      title: 'Studio Marcory',
-      price: '250 000 FCFA/mois',
-      status: 'sold',
-      views: 890,
-      calls: 34,
-      whatsapp: 15,
-      favorites: 8,
-      publishedDate: '2024-12-01',
-      expiresIn: 0,
-    },
-  ]
+  const [properties, setProperties] = useState([
+    { id: 1, title: 'Villa Moderne Cocody', price: '85 000 000 FCFA', city: 'Abidjan', type: 'Vente', status: 'active', views: 234, date: '2025-01-15' },
+    { id: 2, title: 'Appartement Plateau', price: '450 000 FCFA/mois', city: 'Abidjan', type: 'Location', status: 'active', views: 156, date: '2025-01-14' },
+    { id: 3, title: 'Duplex Grand-Bassam', price: '65 000 000 FCFA', city: 'Grand-Bassam', type: 'Vente', status: 'inactive', views: 89, date: '2025-01-10' },
+    { id: 4, title: 'Studio Marcory', price: '250 000 FCFA/mois', city: 'Abidjan', type: 'Location', status: 'sold', views: 312, date: '2025-01-08' },
+  ])
 
-  const activeProperties = myProperties.filter(p => p.status === 'active')
-  const soldProperties = myProperties.filter(p => p.status === 'sold')
-
-  const totalStats = {
-    views: activeProperties.reduce((sum, p) => sum + p.views, 0),
-    calls: activeProperties.reduce((sum, p) => sum + p.calls, 0),
-    whatsapp: activeProperties.reduce((sum, p) => sum + p.whatsapp, 0),
-    favorites: activeProperties.reduce((sum, p) => sum + p.favorites, 0),
+  const toggleStatus = (id: number) => {
+    setProperties(prev => prev.map(p => 
+      p.id === id ? { ...p, status: p.status === 'active' ? 'inactive' : 'active' } : p
+    ))
   }
+
+  const deleteProperty = (id: number) => {
+    if (confirm('Supprimer cette annonce ?')) {
+      setProperties(prev => prev.filter(p => p.id !== id))
+    }
+  }
+
+  const filtered = properties.filter(p => {
+    if (filter === 'active') return p.status === 'active'
+    if (filter === 'inactive') return p.status === 'inactive'
+    if (filter === 'sold') return p.status === 'sold'
+    if (search) return p.title.toLowerCase().includes(search.toLowerCase()) || p.city.toLowerCase().includes(search.toLowerCase())
+    return true
+  })
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">📊 Mes annonces</h1>
-          <p className="text-gray-500 text-sm mt-1">{activeProperties.length} annonce(s) active(s) • {soldProperties.length} vendue(s)</p>
+          <h1 className="text-2xl font-bold text-gray-800">📋 Mes annonces</h1>
+          <p className="text-gray-500 text-sm mt-1">{properties.length} annonces au total</p>
         </div>
-        <Link href="/admin/properties/add" className="btn-primary text-sm flex items-center gap-2">
-          <FaPlus /> Nouvelle annonce
-        </Link>
-      </div>
-
-      {/* Stats globales */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div className="bg-white rounded-2xl shadow-sm p-4 text-center">
-          <FaEye className="text-2xl text-blue-500 mx-auto mb-2" />
-          <div className="text-xl font-bold text-gray-800">{totalStats.views.toLocaleString()}</div>
-          <div className="text-xs text-gray-500">Vues totales</div>
-        </div>
-        <div className="bg-white rounded-2xl shadow-sm p-4 text-center">
-          <FaPhone className="text-2xl text-orange-500 mx-auto mb-2" />
-          <div className="text-xl font-bold text-gray-800">{totalStats.calls}</div>
-          <div className="text-xs text-gray-500">Appels reçus</div>
-        </div>
-        <div className="bg-white rounded-2xl shadow-sm p-4 text-center">
-          <FaWhatsapp className="text-2xl text-green-500 mx-auto mb-2" />
-          <div className="text-xl font-bold text-gray-800">{totalStats.whatsapp}</div>
-          <div className="text-xs text-gray-500">WhatsApp</div>
-        </div>
-        <div className="bg-white rounded-2xl shadow-sm p-4 text-center">
-          <FaChartLine className="text-2xl text-purple-500 mx-auto mb-2" />
-          <div className="text-xl font-bold text-gray-800">{totalStats.favorites}</div>
-          <div className="text-xs text-gray-500">Favoris</div>
+        <div className="flex gap-2">
+          <a href="/api/export" className="px-4 py-2 bg-green-500 text-white rounded-xl text-sm font-semibold hover:bg-green-600 flex items-center gap-2">
+            <FaDownload /> Exporter CSV
+          </a>
+          <Link href="/admin/properties/add" className="btn-primary text-sm flex items-center gap-2">
+            <FaPlus /> Nouvelle annonce
+          </Link>
         </div>
       </div>
 
-      {/* Onglets */}
-      <div className="flex gap-2">
-        <button onClick={() => setActiveTab('active')}
-          className={`px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
-            activeTab === 'active' 
-              ? 'bg-orange-500 text-white shadow-md' 
-              : 'bg-white text-gray-600 hover:bg-gray-100'
-          }`}>
-          ✅ Actives ({activeProperties.length})
-        </button>
-        <button onClick={() => setActiveTab('sold')}
-          className={`px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
-            activeTab === 'sold' 
-              ? 'bg-orange-500 text-white shadow-md' 
-              : 'bg-white text-gray-600 hover:bg-gray-100'
-          }`}>
-          🏠 Vendues/Louées ({soldProperties.length})
-        </button>
+      {/* Recherche et filtres */}
+      <div className="bg-white rounded-2xl shadow-sm p-4 flex flex-col sm:flex-row gap-3">
+        <div className="flex-1 relative">
+          <FaSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+          <input type="text" placeholder="Rechercher une annonce..." value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-orange-500 outline-none" />
+        </div>
+        <div className="flex gap-2">
+          {['all', 'active', 'inactive', 'sold'].map(f => (
+            <button key={f} onClick={() => setFilter(f)}
+              className={`px-3 py-2 rounded-xl text-xs font-medium ${filter === f ? 'bg-orange-500 text-white' : 'bg-gray-100 text-gray-600'}`}>
+              {f === 'all' ? 'Tous' : f === 'active' ? '✅ Actifs' : f === 'inactive' ? '⏸️ Inactifs' : '🏠 Vendus'}
+            </button>
+          ))}
+        </div>
       </div>
 
-      {/* Liste des annonces */}
-      <div className="space-y-3">
-        {(activeTab === 'active' ? activeProperties : soldProperties).map(property => (
-          <div key={property.id} className="bg-white rounded-2xl shadow-sm p-5 hover:shadow-md transition-all">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-1">
-                  <h3 className="font-bold text-gray-800">{property.title}</h3>
-                  <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                    property.status === 'active' 
-                      ? 'bg-green-100 text-green-700' 
-                      : 'bg-red-100 text-red-700'
-                  }`}>
-                    {property.status === 'active' ? 'Active' : 'Vendue'}
-                  </span>
-                </div>
-                <p className="text-sm text-gray-500">{property.price}</p>
-                
-                {/* Mini stats */}
-                <div className="flex flex-wrap gap-4 mt-3 text-xs text-gray-500">
-                  <span className="flex items-center gap-1"><FaEye className="text-blue-500" /> {property.views.toLocaleString()} vues</span>
-                  <span className="flex items-center gap-1"><FaPhone className="text-orange-500" /> {property.calls} appels</span>
-                  <span className="flex items-center gap-1"><FaWhatsapp className="text-green-500" /> {property.whatsapp} WhatsApp</span>
-                  <span className="flex items-center gap-1">❤️ {property.favorites} favoris</span>
-                  {property.status === 'active' && (
-                    <span className="flex items-center gap-1">⏰ Expire dans {property.expiresIn} jours</span>
-                  )}
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2">
-                {property.status === 'active' ? (
-                  <>
-                    <button className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Modifier">
-                      <FaEdit />
+      {/* Tableau */}
+      <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="bg-gray-50 text-left">
+                <th className="px-4 py-3 text-xs font-semibold text-gray-600">Annonce</th>
+                <th className="px-4 py-3 text-xs font-semibold text-gray-600">Prix</th>
+                <th className="px-4 py-3 text-xs font-semibold text-gray-600">Ville</th>
+                <th className="px-4 py-3 text-xs font-semibold text-gray-600">Type</th>
+                <th className="px-4 py-3 text-xs font-semibold text-gray-600">Statut</th>
+                <th className="px-4 py-3 text-xs font-semibold text-gray-600">Vues</th>
+                <th className="px-4 py-3 text-xs font-semibold text-gray-600">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {filtered.map(property => (
+                <tr key={property.id} className="hover:bg-gray-50">
+                  <td className="px-4 py-3">
+                    <div className="font-medium text-gray-800 text-sm">{property.title}</div>
+                    <div className="text-xs text-gray-400">{property.date}</div>
+                  </td>
+                  <td className="px-4 py-3 text-sm font-medium">{property.price}</td>
+                  <td className="px-4 py-3 text-sm text-gray-600">{property.city}</td>
+                  <td className="px-4 py-3 text-sm text-gray-600">{property.type}</td>
+                  <td className="px-4 py-3">
+                    <button onClick={() => toggleStatus(property.id)}
+                      className={`px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1 ${
+                        property.status === 'active' ? 'bg-green-100 text-green-700' :
+                        property.status === 'inactive' ? 'bg-gray-100 text-gray-600' :
+                        'bg-red-100 text-red-700'
+                      }`}>
+                      {property.status === 'active' ? <FaToggleOn className="text-green-500" /> :
+                       property.status === 'inactive' ? <FaToggleOff className="text-gray-500" /> : '🏠'}
+                      {property.status === 'active' ? 'Actif' : property.status === 'inactive' ? 'Inactif' : 'Vendu'}
                     </button>
-                    <button className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors" title="Marquer comme vendu">
-                      <FaCheckCircle />
-                    </button>
-                    <button className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Supprimer">
-                      <FaTrash />
-                    </button>
-                  </>
-                ) : (
-                  <span className="px-3 py-1.5 bg-gray-100 text-gray-600 rounded-lg text-sm">
-                    Archivée
-                  </span>
-                )}
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Lien rapide */}
-      <div className="bg-gradient-to-r from-orange-50 to-amber-50 rounded-2xl p-6 text-center">
-        <h3 className="font-bold text-gray-800 mb-2">🚀 Prêt à publier un nouveau bien ?</h3>
-        <p className="text-sm text-gray-500 mb-4">Ajoutez une nouvelle annonce en quelques minutes</p>
-        <Link href="/admin/properties/add" className="btn-primary inline-flex items-center gap-2">
-          <FaPlus /> Publier un bien
-        </Link>
+                  </td>
+                  <td className="px-4 py-3 text-sm text-gray-600">{property.views}</td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-1">
+                      <Link href={`/annonce/${property.id}`} className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg" title="Voir">
+                        <FaEye className="text-xs" />
+                      </Link>
+                      <button className="p-1.5 text-orange-600 hover:bg-orange-50 rounded-lg" title="Modifier">
+                        <FaEdit className="text-xs" />
+                      </button>
+                      <button onClick={() => deleteProperty(property.id)} className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg" title="Supprimer">
+                        <FaTrash className="text-xs" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   )
