@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import { Navbar } from '@/components/common/Navbar'
 import { Footer } from '@/components/common/Footer'
-import { FaPhone, FaWhatsapp, FaMapMarkerAlt, FaBed, FaBath, FaShare, FaHeart, FaPrint, FaTimes, FaChevronLeft, FaChevronRight } from 'react-icons/fa'
+import { PropertyMap } from '@/components/map/PropertyMap'
+import { FaPhone, FaWhatsapp, FaMapMarkerAlt, FaShare, FaHeart, FaTimes, FaChevronLeft, FaChevronRight } from 'react-icons/fa'
 import Link from 'next/link'
 
 export default function AnnonceDetailPage() {
@@ -29,13 +30,13 @@ export default function AnnonceDetailPage() {
         title: "Annonce",
         price: 0,
         city: "Abidjan",
+        district: "",
         phone: "+225 07 00 00 00",
         description: "Description non disponible",
         images: [],
         type: "sale",
         category: "house",
         isFurnished: false,
-        district: "",
         createdAt: new Date().toISOString(),
       })
     } catch (error) {
@@ -47,16 +48,15 @@ export default function AnnonceDetailPage() {
 
   const handleShare = async () => {
     const url = window.location.href
+    const text = `🏠 ${annonce?.title} - ${formatPrice(annonce?.price)} à ${annonce?.city}\n📞 ${annonce?.phone}\n🔗 ${url}`
+    
     if (navigator.share) {
-      await navigator.share({ title: annonce?.title, url })
+      await navigator.share({ title: annonce?.title, text, url })
     } else {
-      await navigator.clipboard.writeText(url)
-      alert('✅ Lien copié ! Partagez-le sur WhatsApp ou Facebook.')
+      // Ouvrir WhatsApp avec le message
+      const waUrl = `https://wa.me/?text=${encodeURIComponent(text)}`
+      window.open(waUrl, '_blank')
     }
-  }
-
-  const handlePrint = () => {
-    window.print()
   }
 
   const formatPrice = (price: number) => {
@@ -95,16 +95,15 @@ export default function AnnonceDetailPage() {
       <Navbar />
       
       <main className="container-main py-6">
-        {/* Breadcrumb */}
         <div className="text-sm text-gray-500 mb-4">
           <Link href="/" className="hover:text-orange-600">Accueil</Link> / 
           <Link href="/properties" className="hover:text-orange-600">Annonces</Link> / 
-          <span className="text-gray-800">{annonce.title}</span>
+          <span className="text-gray-800 truncate">{annonce.title}</span>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Galerie */}
           <div className="lg:col-span-2 space-y-6">
+            {/* Galerie */}
             <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
               <div className="relative h-64 sm:h-80 md:h-96 bg-gradient-to-br from-orange-100 to-orange-200 flex items-center justify-center cursor-pointer"
                 onClick={() => annonce.images?.length > 0 && setShowGallery(true)}>
@@ -114,7 +113,6 @@ export default function AnnonceDetailPage() {
                   <span className="text-8xl">{getDefaultImage()}</span>
                 )}
                 
-                {/* Badges */}
                 <span className={`absolute top-4 left-4 px-3 py-1.5 rounded-full text-sm font-bold text-white ${
                   annonce.type === 'sale' ? 'bg-blue-600' : annonce.type === 'vacation' ? 'bg-orange-600' : 'bg-green-600'
                 }`}>
@@ -124,7 +122,6 @@ export default function AnnonceDetailPage() {
                   <span className="absolute top-4 right-4 bg-purple-600 text-white px-3 py-1.5 rounded-full text-sm font-bold">🛋️ Meublé</span>
                 )}
                 
-                {/* Navigation galerie */}
                 {annonce.images?.length > 1 && (
                   <>
                     <button onClick={(e) => { e.stopPropagation(); setSelectedImage(prev => prev > 0 ? prev - 1 : annonce.images.length - 1) }}
@@ -138,7 +135,6 @@ export default function AnnonceDetailPage() {
                   </>
                 )}
                 
-                {/* Compteur photos */}
                 {annonce.images?.length > 0 && (
                   <span className="absolute bottom-4 right-4 bg-black/50 text-white px-3 py-1 rounded-full text-xs">
                     📷 {selectedImage + 1}/{annonce.images.length}
@@ -146,7 +142,6 @@ export default function AnnonceDetailPage() {
                 )}
               </div>
               
-              {/* Miniatures */}
               {annonce.images?.length > 1 && (
                 <div className="flex gap-2 p-3 overflow-x-auto">
                   {annonce.images.map((img: string, i: number) => (
@@ -184,7 +179,7 @@ export default function AnnonceDetailPage() {
 
               {annonce.isFurnished && (
                 <div className="mb-6 pb-6 border-b">
-                  <h2 className="font-bold text-lg mb-2">🛋️ Équipements du meublé</h2>
+                  <h2 className="font-bold text-lg mb-2">🛋️ Équipements</h2>
                   <div className="grid grid-cols-2 gap-2 text-sm">
                     {['WiFi', 'Climatisation', 'TV', 'Cuisine équipée', 'Parking', 'Sécurité 24/7'].map(item => (
                       <span key={item} className="flex items-center gap-2">✅ {item}</span>
@@ -193,7 +188,6 @@ export default function AnnonceDetailPage() {
                 </div>
               )}
 
-              {/* Actions */}
               <div className="flex flex-wrap gap-3">
                 <button onClick={handleShare}
                   className="flex items-center gap-2 px-4 py-2.5 bg-blue-500 text-white rounded-xl text-sm font-semibold hover:bg-blue-600 transition-colors">
@@ -203,12 +197,16 @@ export default function AnnonceDetailPage() {
                   className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors ${isFavorite ? 'bg-red-500 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}>
                   <FaHeart /> {isFavorite ? 'Favori' : 'Ajouter aux favoris'}
                 </button>
-                <button onClick={handlePrint}
-                  className="flex items-center gap-2 px-4 py-2.5 bg-gray-100 text-gray-700 rounded-xl text-sm font-semibold hover:bg-gray-200 transition-colors">
-                  <FaPrint /> Imprimer
-                </button>
               </div>
             </div>
+
+            {/* Carte */}
+            <PropertyMap 
+              city={annonce.city} 
+              district={annonce.district}
+              title={annonce.title}
+              price={annonce.price}
+            />
           </div>
 
           {/* Sidebar Contact */}

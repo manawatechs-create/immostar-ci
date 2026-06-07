@@ -102,13 +102,13 @@ export function Footer() {
             <FaHeart className="text-red-500" /> © 2026 Manawa Techs. Tous droits réservés.
           </p>
           <div className="flex gap-4 sm:gap-6">
-            <Link href="#" className="text-gray-500 hover:text-orange-500 transition-colors">
+            <Link href="/confidentialite" className="text-gray-500 hover:text-orange-500 transition-colors">
               🔒 Confidentialité
             </Link>
-            <Link href="#" className="text-gray-500 hover:text-orange-500 transition-colors">
+            <Link href="/confidentialite" className="text-gray-500 hover:text-orange-500 transition-colors">
               📋 Conditions
             </Link>
-            <Link href="#" className="text-gray-500 hover:text-orange-500 transition-colors">
+            <Link href="/confidentialite" className="text-gray-500 hover:text-orange-500 transition-colors">
               🍪 Cookies
             </Link>
           </div>
