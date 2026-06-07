@@ -5,7 +5,7 @@ import { useSearchParams } from 'next/navigation'
 import { Navbar } from '@/components/common/Navbar'
 import { Footer } from '@/components/common/Footer'
 import Link from 'next/link'
-import { FaMapMarkerAlt, FaSearch, FaPhone, FaFilter } from 'react-icons/fa'
+import { FaMapMarkerAlt, FaSearch, FaEye, FaFilter } from 'react-icons/fa'
 
 function PropertiesContent() {
   const searchParams = useSearchParams()
@@ -17,11 +17,11 @@ function PropertiesContent() {
   const [typeFilter, setTypeFilter] = useState('')
   const [furnishedFilter, setFurnishedFilter] = useState(false)
 
-  // Lire les paramètres d'URL
   useEffect(() => {
     const type = searchParams.get('type')
     const city = searchParams.get('city')
     const furnished = searchParams.get('furnished')
+    const searchQuery = searchParams.get('search')
     
     if (type === 'sale') setTypeFilter('sale')
     else if (type === 'rent') setTypeFilter('rent')
@@ -29,6 +29,7 @@ function PropertiesContent() {
     
     if (city) setCityFilter(city)
     if (furnished === 'true') setFurnishedFilter(true)
+    if (searchQuery) setSearch(searchQuery)
     
     setMounted(true)
   }, [searchParams])
@@ -75,6 +76,14 @@ function PropertiesContent() {
     return <div className="min-h-screen"><Navbar /><div className="flex justify-center py-20"><span className="loader" /></div><Footer /></div>
   }
 
+  const filtered = search
+    ? listings.filter(l => 
+        l.title?.toLowerCase().includes(search.toLowerCase()) ||
+        l.city?.toLowerCase().includes(search.toLowerCase()) ||
+        l.district?.toLowerCase().includes(search.toLowerCase())
+      )
+    : listings
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
@@ -83,7 +92,7 @@ function PropertiesContent() {
         <section className="bg-gradient-to-r from-orange-500 to-orange-600 text-white py-8">
           <div className="container-main">
             <h1 className="text-2xl sm:text-3xl font-black mb-2">{getTitle()}</h1>
-            <p className="text-orange-100 text-sm">{listings.length} annonce(s)</p>
+            <p className="text-orange-100 text-sm">{filtered.length} annonce(s) trouvée(s)</p>
           </div>
         </section>
 
@@ -93,7 +102,7 @@ function PropertiesContent() {
             <div className="flex flex-col sm:flex-row gap-3 mb-3">
               <div className="flex-1 relative">
                 <FaSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
-                <input type="text" placeholder="Rechercher..." value={search}
+                <input type="text" placeholder="Rechercher un bien..." value={search}
                   onChange={e => setSearch(e.target.value)}
                   className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-orange-500 outline-none" />
               </div>
@@ -130,22 +139,22 @@ function PropertiesContent() {
           </div>
         </section>
 
-        {/* Liste */}
+        {/* Liste des biens */}
         <section className="container-main mb-12">
           {loading ? (
             <div className="flex justify-center py-20"><span className="loader" /></div>
-          ) : listings.length === 0 ? (
+          ) : filtered.length === 0 ? (
             <div className="text-center py-20">
               <div className="text-6xl mb-4">🏠</div>
-              <h3 className="text-xl font-bold mb-2">Aucune annonce</h3>
+              <h3 className="text-xl font-bold mb-2">Aucune annonce trouvée</h3>
+              <p className="text-gray-500 mb-4">Soyez le premier à publier !</p>
               <Link href="/publier" className="btn-primary">📝 Publier une annonce</Link>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {listings
-                .filter((l: any) => !search || l.title?.toLowerCase().includes(search.toLowerCase()) || l.city?.toLowerCase().includes(search.toLowerCase()))
-                .map((listing: any) => (
+              {filtered.map((listing: any) => (
                 <div key={listing.id} className="bg-white rounded-2xl shadow-sm overflow-hidden hover:shadow-lg hover:-translate-y-1 transition-all group">
+                  {/* Image */}
                   <div className="h-48 bg-gradient-to-br from-orange-100 to-orange-200 flex items-center justify-center relative">
                     {listing.images?.length > 0 ? (
                       <img src={listing.images[0]} alt={listing.title} className="w-full h-full object-cover" />
@@ -166,6 +175,7 @@ function PropertiesContent() {
                     )}
                   </div>
                   
+                  {/* Contenu */}
                   <div className="p-4">
                     <h3 className="font-bold text-gray-800 text-sm truncate">{listing.title}</h3>
                     <p className="text-xs text-gray-500 flex items-center gap-1 mt-1">
@@ -173,17 +183,25 @@ function PropertiesContent() {
                       {listing.city}{listing.district ? `, ${listing.district}` : ''}
                     </p>
                     
+                    {/* Description courte */}
+                    {listing.description && (
+                      <p className="text-xs text-gray-400 mt-1 line-clamp-2">{listing.description}</p>
+                    )}
+                    
                     <div className="flex items-end justify-between mt-3 pt-3 border-t">
                       <div>
                         <span className="text-lg font-black text-orange-600">{formatPrice(listing.price)}</span>
                         {listing.type === 'rent' && <span className="text-xs text-gray-500">/mois</span>}
                         {listing.type === 'vacation' && <span className="text-xs text-gray-500">/nuit</span>}
                       </div>
-                      {listing.phone && (
-                        <a href={`tel:${listing.phone}`} className="flex items-center gap-1 bg-green-500 text-white px-3 py-1.5 rounded-full text-xs font-bold hover:bg-green-600">
-                          <FaPhone className="text-xs" /> Appeler
-                        </a>
-                      )}
+                      
+                      {/* BOUTON VOIR DÉTAILS */}
+                      <Link 
+                        href={`/annonce/${listing.id}`}
+                        className="flex items-center gap-1.5 bg-orange-500 text-white px-4 py-2 rounded-full text-xs font-bold hover:bg-orange-600 transition-all shadow-md hover:shadow-lg group-hover:scale-105"
+                      >
+                        <FaEye className="text-xs" /> Voir détails
+                      </Link>
                     </div>
                   </div>
                 </div>

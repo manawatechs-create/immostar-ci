@@ -5,7 +5,7 @@ import { Navbar } from '@/components/common/Navbar'
 import { Footer } from '@/components/common/Footer'
 import { HeroSection } from '@/components/common/HeroSection'
 import Link from 'next/link'
-import { FaMapMarkerAlt, FaPhone, FaSearch } from 'react-icons/fa'
+import { FaMapMarkerAlt, FaPhone, FaSearch, FaEye } from 'react-icons/fa'
 
 export default function HomePage() {
   const [mounted, setMounted] = useState(false)
@@ -105,9 +105,9 @@ export default function HomePage() {
                         {listing.type === 'vacation' && <span className="text-xs text-gray-500">/nuit</span>}
                       </div>
                       {listing.phone && (
-                        <a href={`tel:${listing.phone}`} 
+                        <a href={`/annonce/${listing.phone}`} 
                           className="flex items-center gap-1 bg-green-500 text-white px-3 py-1.5 rounded-full text-xs font-bold hover:bg-green-600 transition-colors">
-                          <FaPhone className="text-xs" /> Appeler
+                          <FaEye className="text-xs" /> Voir détails
                         </a>
                       )}
                     </div>
