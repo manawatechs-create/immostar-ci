@@ -1,14 +1,13 @@
 import type { Metadata } from 'next'
 import './globals.css'
 import { AnalyticsTracker } from '@/components/analytics/Tracker'
+import { ScrollToTop } from '@/components/common/ScrollToTop'
+import { CookieBanner } from '@/components/common/CookieBanner'
 
 export const metadata: Metadata = {
   title: 'ImmoStar | La star de l\'immobilier en Côte d\'Ivoire',
-  description: 'Trouvez votre maison de rêve en Côte d\'Ivoire avec ImmoStar. Achat, vente, location.',
-  keywords: 'immobilier, Côte d\'Ivoire, Abidjan, ImmoStar, maison, appartement, villa, meublé',
+  description: 'Trouvez votre maison de rêve en Côte d\'Ivoire avec ImmoStar.',
   authors: [{ name: 'Manawa Techs' }],
-  creator: 'Manawa Techs',
-  publisher: 'Manawa Techs',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -22,6 +21,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="bg-gray-50 text-gray-800 antialiased">
         <AnalyticsTracker />
         {children}
+        <ScrollToTop />
+        <CookieBanner />
       </body>
     </html>
   )
