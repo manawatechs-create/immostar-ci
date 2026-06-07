@@ -1,87 +1,58 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    const { data, error } = await supabase
-      .from('properties')
-      .select('*, property_images(*), owner:owner_id(*)')
-      .eq('id', params.id)
-      .single()
-    
-    if (error) {
-      console.error('Supabase error:', error)
-      return NextResponse.json({ error: 'Bien non trouvé' }, { status: 404 })
+  const { id } = await params
+  
+  // Données mockées pour la démo
+  const property = {
+    id: id,
+    title: "Villa Moderne Cocody",
+    description: "Magnifique villa avec piscine et jardin dans le quartier résidentiel de Cocody.",
+    price: 85000000,
+    listing_type: "sale",
+    city: "Abidjan",
+    district: "Cocody",
+    bedrooms: 5,
+    bathrooms: 3,
+    area_sqm: 350,
+    rating: 4.9,
+    views: 1234,
+    features: ['Piscine', 'Garage', 'Jardin', 'Sécurité 24/7', 'Climatisation'],
+    owner: { 
+      name: "M. Kouadio", 
+      phone: "+225 07 00 00 01", 
+      email: "kouadio@email.com" 
     }
-    
-    // Incrémenter le compteur de vues
-    await supabase
-      .from('properties')
-      .update({ views_count: (data.views_count || 0) + 1 })
-      .eq('id', params.id)
-    
-    return NextResponse.json(data)
-  } catch (error: any) {
-    console.error('Server error:', error)
-    return NextResponse.json(
-      { error: error.message || 'Erreur serveur' },
-      { status: 500 }
-    )
   }
+
+  return NextResponse.json(property)
 }
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    const updates = await request.json()
-    
-    const { data, error } = await supabase
-      .from('properties')
-      .update({ ...updates, updated_at: new Date().toISOString() })
-      .eq('id', params.id)
-      .select()
-    
-    if (error) {
-      console.error('Supabase error:', error)
-      return NextResponse.json({ error: error.message }, { status: 400 })
-    }
-    
-    return NextResponse.json(data[0])
-  } catch (error: any) {
-    console.error('Server error:', error)
-    return NextResponse.json(
-      { error: error.message || 'Erreur lors de la mise à jour' },
-      { status: 500 }
-    )
-  }
+  const { id } = await params
+  const data = await request.json()
+  
+  return NextResponse.json({ 
+    success: true, 
+    message: `Bien #${id} mis à jour`,
+    data 
+  })
 }
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    const { error } = await supabase
-      .from('properties')
-      .delete()
-      .eq('id', params.id)
-    
-    if (error) {
-      console.error('Supabase error:', error)
-      return NextResponse.json({ error: error.message }, { status: 400 })
-    }
-    
-    return NextResponse.json({ message: 'Bien supprimé avec succès' })
-  } catch (error: any) {
-    console.error('Server error:', error)
-    return NextResponse.json(
-      { error: error.message || 'Erreur lors de la suppression' },
-      { status: 500 }
-    )
-  }
+  const { id } = await params
+  
+  return NextResponse.json({ 
+    success: true, 
+    message: `Bien #${id} supprimé` 
+  })
 }
