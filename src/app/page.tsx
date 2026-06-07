@@ -4,123 +4,131 @@ import { useState, useEffect } from 'react'
 import { Navbar } from '@/components/common/Navbar'
 import { Footer } from '@/components/common/Footer'
 import { HeroSection } from '@/components/common/HeroSection'
-import { Categories } from '@/components/common/Categories'
-import { PropertyCardV2 } from '@/components/properties/PropertyCardV2'
 import Link from 'next/link'
-
-const mockProperties = [
-  { id: 1, title: "Villa Moderne Cocody", city: "Abidjan", district: "Cocody", price: 85000000, rating: 4.9, image: "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=600&h=400&fit=crop", type: "villa", listing_type: "sale", bedrooms: 5, bathrooms: 3, area_sqm: 350, is_featured: true },
-  { id: 2, title: "Appartement Plateau", city: "Abidjan", district: "Plateau", price: 450000, rating: 4.8, image: "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=600&h=400&fit=crop", type: "apartment", listing_type: "rent", bedrooms: 3, bathrooms: 2, area_sqm: 120 },
-  { id: 3, title: "Duplex Grand-Bassam", city: "Grand-Bassam", price: 65000000, rating: 4.7, image: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=600&h=400&fit=crop", type: "house", listing_type: "sale", bedrooms: 4, bathrooms: 3, area_sqm: 280, is_featured: true },
-  { id: 4, title: "Studio Meublé Marcory", city: "Abidjan", district: "Marcory", price: 250000, rating: 4.5, image: "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=600&h=400&fit=crop", type: "studio", listing_type: "rent", bedrooms: 1, bathrooms: 1, area_sqm: 45, is_furnished: true },
-]
-
-const stats = [
-  { value: '1 234', label: 'Biens disponibles', icon: '🏠' },
-  { value: '5 678', label: 'Clients satisfaits', icon: '😊' },
-  { value: '15', label: 'Villes couvertes', icon: '🏙️' },
-  { value: '89', label: 'Agences partenaires', icon: '🤝' },
-]
+import { FaMapMarkerAlt, FaPhone, FaSearch } from 'react-icons/fa'
 
 export default function HomePage() {
   const [mounted, setMounted] = useState(false)
-  const [featured, setFeatured] = useState<any[]>([])
-  const [recent, setRecent] = useState<any[]>([])
+  const [listings, setListings] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     setMounted(true)
-    setTimeout(() => {
-      setFeatured(mockProperties.filter(p => p.is_featured))
-      setRecent(mockProperties)
-    }, 300)
+    fetchListings()
   }, [])
 
+  const fetchListings = async () => {
+    try {
+      const response = await fetch('/api/listings')
+      const data = await response.json()
+      setListings(data.slice(0, 8)) // 8 derniers biens
+    } catch (error) {
+      console.error('Erreur:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const formatPrice = (price: number) => {
+    if (!price) return '0 FCFA'
+    if (price >= 1000000) return `${(price / 1000000).toFixed(0)}M FCFA`
+    return price.toLocaleString() + ' FCFA'
+  }
+
   if (!mounted) {
-    return (
-      <div className="min-h-screen">
-        <Navbar />
-        <div className="flex justify-center items-center min-h-[60vh]">
-          <span className="loader" />
-        </div>
-        <Footer />
-      </div>
-    )
+    return <div className="min-h-screen"><Navbar /><div className="flex justify-center py-20"><span className="loader" /></div><Footer /></div>
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen bg-gray-50">
       <Navbar />
       
-      <main className="flex-1">
+      <main>
         <HeroSection />
-        <Categories />
 
-        {/* Stats - Orange Gradient */}
-        <section className="container-main -mt-6 relative z-20 mb-12 sm:mb-16">
-          <div className="section-orange rounded-2xl shadow-xl shadow-orange-500/30 p-6 sm:p-8">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
-              {stats.map((stat, i) => (
-                <div key={i} className="stat-card">
-                  <div className="text-2xl sm:text-3xl mb-1">{stat.icon}</div>
-                  <div className="stat-value">{stat.value}+</div>
-                  <div className="stat-label">{stat.label}</div>
+        {/* Tous les biens */}
+        <section className="container-main py-12">
+          <div className="flex justify-between items-center mb-6">
+            <div>
+              <h2 className="text-2xl sm:text-3xl font-bold text-gray-800">🏠 Annonces récentes</h2>
+              <p className="text-gray-500 text-sm mt-1">Découvrez les derniers biens publiés</p>
+            </div>
+            <Link href="/properties" className="text-orange-600 font-semibold hover:text-orange-700 flex items-center gap-1">
+              Voir tout <span>→</span>
+            </Link>
+          </div>
+
+          {loading ? (
+            <div className="flex justify-center py-20"><span className="loader" /></div>
+          ) : listings.length === 0 ? (
+            <div className="text-center py-20">
+              <div className="text-6xl mb-4">🏠</div>
+              <h3 className="text-xl font-bold mb-2">Aucune annonce</h3>
+              <p className="text-gray-500 mb-4">Soyez le premier à publier !</p>
+              <Link href="/publier" className="btn-primary">📝 Publier une annonce</Link>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {listings.map(listing => (
+                <div key={listing.id} className="bg-white rounded-2xl shadow-sm overflow-hidden hover:shadow-lg hover:-translate-y-1 transition-all group">
+                  <div className="h-48 bg-gradient-to-br from-orange-100 to-orange-200 flex items-center justify-center relative">
+                    {listing.images?.length > 0 ? (
+                      <img src={listing.images[0]} alt={listing.title} className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="text-5xl">
+                        {listing.isFurnished ? '🛋️' : listing.category === 'villa' ? '🏡' : listing.category === 'apartment' ? '🏢' : listing.category === 'land' ? '🌳' : '🏠'}
+                      </span>
+                    )}
+                    <span className={`absolute top-3 left-3 px-2.5 py-1 rounded-full text-xs font-bold text-white ${
+                      listing.type === 'sale' ? 'bg-blue-600' : listing.type === 'vacation' ? 'bg-orange-600' : 'bg-green-600'
+                    }`}>
+                      {listing.type === 'sale' ? 'À vendre' : listing.type === 'vacation' ? 'Courte durée' : 'À louer'}
+                    </span>
+                    {listing.isFurnished && (
+                      <span className="absolute top-3 right-3 bg-purple-600 text-white px-2 py-1 rounded-full text-xs font-bold">
+                        🛋️ Meublé
+                      </span>
+                    )}
+                  </div>
+                  
+                  <div className="p-4">
+                    <h3 className="font-bold text-gray-800 text-sm truncate">{listing.title}</h3>
+                    <p className="text-xs text-gray-500 flex items-center gap-1 mt-1">
+                      <FaMapMarkerAlt className="text-orange-500 flex-shrink-0" />
+                      {listing.city}{listing.district ? `, ${listing.district}` : ''}
+                    </p>
+                    
+                    <div className="flex items-end justify-between mt-3 pt-3 border-t">
+                      <div>
+                        <span className="text-lg font-black text-orange-600">{formatPrice(listing.price)}</span>
+                        {listing.type === 'rent' && <span className="text-xs text-gray-500">/mois</span>}
+                        {listing.type === 'vacation' && <span className="text-xs text-gray-500">/nuit</span>}
+                      </div>
+                      {listing.phone && (
+                        <a href={`tel:${listing.phone}`} 
+                          className="flex items-center gap-1 bg-green-500 text-white px-3 py-1.5 rounded-full text-xs font-bold hover:bg-green-600 transition-colors">
+                          <FaPhone className="text-xs" /> Appeler
+                        </a>
+                      )}
+                    </div>
+                  </div>
                 </div>
               ))}
             </div>
-          </div>
+          )}
         </section>
 
-        {/* Biens Premium */}
-        <section className="container-main mb-12 sm:mb-16">
-          <div className="flex justify-between items-center mb-6 sm:mb-8">
-            <div>
-              <h2 className="title-section">⭐ Biens Premium</h2>
-              <p className="text-small mt-1">Les meilleures offres pour vous</p>
-            </div>
-            <Link href="/properties?featured=true" className="text-orange-600 font-semibold hover:text-orange-700 text-sm sm:text-base flex items-center gap-1">
-              Voir tout <span className="text-lg">→</span>
-            </Link>
-          </div>
-          <div className="property-grid">
-            {featured.map(p => <PropertyCardV2 key={p.id} property={p} />)}
-          </div>
-        </section>
-
-        {/* Nouveautés */}
-        <section className="container-main mb-12 sm:mb-16">
-          <div className="flex justify-between items-center mb-6 sm:mb-8">
-            <div>
-              <h2 className="title-section">🆕 Nouveautés</h2>
-              <p className="text-small mt-1">Derniers biens ajoutés</p>
-            </div>
-            <Link href="/properties" className="text-orange-600 font-semibold hover:text-orange-700 text-sm sm:text-base flex items-center gap-1">
-              Voir tout <span className="text-lg">→</span>
-            </Link>
-          </div>
-          <div className="property-grid">
-            {recent.map(p => <PropertyCardV2 key={p.id} property={p} />)}
-          </div>
-        </section>
-
-        {/* CTA Newsletter */}
-        <section className="section-light section-padding">
-          <div className="container-main">
-            <div className="card-padded text-center max-w-2xl mx-auto border-orange-200">
-              <span className="text-orange-600 font-semibold text-xs sm:text-sm tracking-wider uppercase bg-orange-50 px-4 py-1.5 rounded-full">
-                ⭐ Rejoignez ImmoStar
-              </span>
-              <h3 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-800 mt-4 mb-3">
-                Ne manquez aucune opportunité
-              </h3>
-              <p className="text-body mb-6 sm:mb-8">
-                Recevez en avant-première les meilleures offres immobilières.
-              </p>
-              <form className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
-                <input type="email" placeholder="Votre adresse email" className="input-field rounded-full border-orange-200 focus:ring-orange-500" required />
-                <button type="submit" className="btn-primary rounded-full whitespace-nowrap">
-                  S&apos;abonner
-                </button>
-              </form>
+        {/* Liens rapides */}
+        <section className="bg-gradient-to-r from-orange-50 to-amber-50 py-12">
+          <div className="container-main text-center">
+            <h2 className="text-2xl font-bold text-gray-800 mb-6">📱 Publiez votre bien gratuitement</h2>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Link href="/publier" className="btn-primary text-lg">
+                📝 Publier une annonce
+              </Link>
+              <Link href="/properties" className="btn-outline text-lg">
+                🔍 Voir les annonces
+              </Link>
             </div>
           </div>
         </section>
@@ -130,5 +138,3 @@ export default function HomePage() {
     </div>
   )
 }
-
-// Bannière de conversion ajoutée dans le return
