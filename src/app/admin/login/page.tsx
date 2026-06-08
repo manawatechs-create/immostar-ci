@@ -10,17 +10,9 @@ export default function AdminLoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const [attempts, setAttempts] = useState(0)
-  const [blocked, setBlocked] = useState(false)
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
-    
-    if (blocked) {
-      setError('⛔ Compte bloqué temporairement. Réessayez dans 15 minutes.')
-      return
-    }
-
     setLoading(true)
     setError('')
 
@@ -35,15 +27,7 @@ export default function AdminLoginPage() {
         }))
         router.push('/admin/dashboard')
       } else {
-        const newAttempts = attempts + 1
-        setAttempts(newAttempts)
-        if (newAttempts >= 5) {
-          setBlocked(true)
-          setError('⛔ Trop de tentatives. Compte bloqué 15 minutes.')
-          setTimeout(() => { setBlocked(false); setAttempts(0) }, 900000)
-        } else {
-          setError(`❌ Identifiants incorrects. ${5 - newAttempts} tentative(s) restante(s).`)
-        }
+        setError('Email ou mot de passe incorrect')
       }
       setLoading(false)
     }, 800)
@@ -60,7 +44,7 @@ export default function AdminLoginPage() {
 
         <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
           {error && (
-            <div className={`px-4 py-3 rounded-xl mb-6 text-sm ${error.includes('⛔') ? 'bg-red-50 text-red-600 border border-red-200' : 'bg-red-50 text-red-600'}`}>
+            <div className="bg-red-50 text-red-600 px-4 py-3 rounded-xl mb-6 text-sm border border-red-200">
               {error}
             </div>
           )}
