@@ -5,7 +5,7 @@ import { useSearchParams } from 'next/navigation'
 import { Navbar } from '@/components/common/Navbar'
 import { Footer } from '@/components/common/Footer'
 import Link from 'next/link'
-import { FaMapMarkerAlt, FaSearch, FaEye, FaFilter } from 'react-icons/fa'
+import { FaMapMarkerAlt, FaSearch, FaEye } from 'react-icons/fa'
 
 function PropertiesContent() {
   const searchParams = useSearchParams()
@@ -15,41 +15,26 @@ function PropertiesContent() {
   const [search, setSearch] = useState('')
   const [cityFilter, setCityFilter] = useState('')
   const [typeFilter, setTypeFilter] = useState('')
-  const [furnishedFilter, setFurnishedFilter] = useState(false)
 
   useEffect(() => {
     const type = searchParams.get('type')
     const city = searchParams.get('city')
-    const furnished = searchParams.get('furnished')
-    const searchQuery = searchParams.get('search')
-    
     if (type === 'sale') setTypeFilter('sale')
     else if (type === 'rent') setTypeFilter('rent')
-    else if (type) setTypeFilter(type)
-    
     if (city) setCityFilter(city)
-    if (furnished === 'true') setFurnishedFilter(true)
-    if (searchQuery) setSearch(searchQuery)
-    
     setMounted(true)
   }, [searchParams])
 
   useEffect(() => {
     if (mounted) fetchListings()
-  }, [mounted, cityFilter, typeFilter, furnishedFilter])
+  }, [mounted])
 
   const fetchListings = async () => {
     setLoading(true)
     try {
-      const response = await fetch('/api/listings')
-      const data = await response.json()
-      
-      let filtered = [...data]
-      if (cityFilter) filtered = filtered.filter((l: any) => l.city === cityFilter)
-      if (typeFilter) filtered = filtered.filter((l: any) => l.type === typeFilter)
-      if (furnishedFilter) filtered = filtered.filter((l: any) => l.isFurnished === true)
-      
-      setListings(filtered)
+      const res = await fetch('/api/listings')
+      const data = await res.json()
+      setListings(data)
     } catch (error) {
       console.error('Erreur:', error)
     } finally {
@@ -63,144 +48,85 @@ function PropertiesContent() {
     return price.toLocaleString() + ' FCFA'
   }
 
-  const getTitle = () => {
-    if (typeFilter === 'sale') return '🏠 Biens à vendre'
-    if (typeFilter === 'rent') return '🔑 Biens à louer'
-    if (typeFilter === 'vacation') return '🏖️ Locations courte durée'
-    if (furnishedFilter) return '🛋️ Résidences meublées'
-    if (cityFilter) return `📍 Biens à ${cityFilter}`
-    return '🏠 Toutes les annonces'
-  }
+  const filtered = listings.filter(l => {
+    if (typeFilter && l.type !== typeFilter) return false
+    if (cityFilter && l.city !== cityFilter) return false
+    if (search && !l.title?.toLowerCase().includes(search.toLowerCase()) && !l.city?.toLowerCase().includes(search.toLowerCase())) return false
+    return true
+  })
 
-  if (!mounted) {
-    return <div className="min-h-screen"><Navbar /><div className="flex justify-center py-20"><span className="loader" /></div><Footer /></div>
-  }
+  if (!mounted) return <div className="min-h-screen"><Navbar /><div className="flex justify-center py-20"><span className="loader" /></div><Footer /></div>
 
-  const filtered = search
-    ? listings.filter(l => 
-        l.title?.toLowerCase().includes(search.toLowerCase()) ||
-        l.city?.toLowerCase().includes(search.toLowerCase()) ||
-        l.district?.toLowerCase().includes(search.toLowerCase())
-      )
-    : listings
+  const title = typeFilter === 'sale' ? '🏠 Biens à vendre' : typeFilter === 'rent' ? '🔑 Biens à louer' : cityFilter ? `📍 Biens à ${cityFilter}` : '🏠 Toutes les annonces'
 
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
-      
       <main className="flex-1">
         <section className="bg-gradient-to-r from-orange-500 to-orange-600 text-white py-8">
           <div className="container-main">
-            <h1 className="text-2xl sm:text-3xl font-black mb-2">{getTitle()}</h1>
-            <p className="text-orange-100 text-sm">{filtered.length} annonce(s) trouvée(s)</p>
+            <h1 className="text-2xl sm:text-3xl font-black mb-2">{title}</h1>
+            <p className="text-orange-100 text-sm">{filtered.length} bien(s) trouvé(s)</p>
           </div>
         </section>
 
-        {/* Filtres */}
         <section className="container-main -mt-6 relative z-20 mb-8">
           <div className="bg-white rounded-2xl shadow-xl p-4">
             <div className="flex flex-col sm:flex-row gap-3 mb-3">
               <div className="flex-1 relative">
                 <FaSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
-                <input type="text" placeholder="Rechercher un bien..." value={search}
-                  onChange={e => setSearch(e.target.value)}
+                <input type="text" placeholder="Rechercher..." value={search} onChange={e => setSearch(e.target.value)}
                   className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-orange-500 outline-none" />
               </div>
-              <select value={cityFilter} onChange={e => setCityFilter(e.target.value)}
-                className="px-4 py-2.5 border border-gray-200 rounded-xl text-sm">
+              <select value={cityFilter} onChange={e => setCityFilter(e.target.value)} className="px-4 py-2.5 border border-gray-200 rounded-xl text-sm">
                 <option value="">Toutes les villes</option>
-                <option>Abidjan</option><option>Yamoussoukro</option><option>Bouaké</option>
-                <option>Grand-Bassam</option><option>San Pedro</option>
+                <option>Abidjan</option><option>Yamoussoukro</option><option>Bouaké</option><option>Grand-Bassam</option><option>San Pedro</option>
               </select>
             </div>
-            
             <div className="flex flex-wrap gap-2">
-              <button onClick={() => setTypeFilter('')} 
-                className={`px-4 py-2 rounded-full text-xs font-medium ${typeFilter === '' ? 'bg-orange-500 text-white' : 'bg-gray-100 text-gray-600'}`}>
-                Tous
-              </button>
-              <button onClick={() => setTypeFilter('sale')} 
-                className={`px-4 py-2 rounded-full text-xs font-medium ${typeFilter === 'sale' ? 'bg-orange-500 text-white' : 'bg-gray-100 text-gray-600'}`}>
-                💰 À vendre
-              </button>
-              <button onClick={() => setTypeFilter('rent')} 
-                className={`px-4 py-2 rounded-full text-xs font-medium ${typeFilter === 'rent' ? 'bg-orange-500 text-white' : 'bg-gray-100 text-gray-600'}`}>
-                🔑 À louer
-              </button>
-              <button onClick={() => setTypeFilter('vacation')} 
-                className={`px-4 py-2 rounded-full text-xs font-medium ${typeFilter === 'vacation' ? 'bg-orange-500 text-white' : 'bg-gray-100 text-gray-600'}`}>
-                🏖️ Courte durée
-              </button>
-              <button onClick={() => { setFurnishedFilter(!furnishedFilter); if (!furnishedFilter) setTypeFilter('rent') }}
-                className={`px-4 py-2 rounded-full text-xs font-medium ${furnishedFilter ? 'bg-purple-500 text-white' : 'bg-gray-100 text-gray-600'}`}>
-                🛋️ Meublés
-              </button>
+              <button onClick={() => setTypeFilter('')} className={`px-4 py-2 rounded-full text-xs font-medium ${typeFilter === '' ? 'bg-orange-500 text-white' : 'bg-gray-100'}`}>Tous</button>
+              <button onClick={() => setTypeFilter('sale')} className={`px-4 py-2 rounded-full text-xs font-medium ${typeFilter === 'sale' ? 'bg-orange-500 text-white' : 'bg-gray-100'}`}>💰 À vendre</button>
+              <button onClick={() => setTypeFilter('rent')} className={`px-4 py-2 rounded-full text-xs font-medium ${typeFilter === 'rent' ? 'bg-orange-500 text-white' : 'bg-gray-100'}`}>🔑 À louer</button>
             </div>
           </div>
         </section>
 
-        {/* Liste des biens */}
         <section className="container-main mb-12">
           {loading ? (
             <div className="flex justify-center py-20"><span className="loader" /></div>
           ) : filtered.length === 0 ? (
             <div className="text-center py-20">
               <div className="text-6xl mb-4">🏠</div>
-              <h3 className="text-xl font-bold mb-2">Aucune annonce trouvée</h3>
-              <p className="text-gray-500 mb-4">Soyez le premier à publier !</p>
-              <Link href="/publier" className="btn-primary">📝 Publier une annonce</Link>
+              <h3 className="text-xl font-bold">Aucun bien trouvé</h3>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {filtered.map((listing: any) => (
+              {filtered.map(listing => (
                 <div key={listing.id} className="bg-white rounded-2xl shadow-sm overflow-hidden hover:shadow-lg hover:-translate-y-1 transition-all group">
                   {/* Image */}
-                  <div className="h-48 bg-gradient-to-br from-orange-100 to-orange-200 flex items-center justify-center relative">
-                    {listing.images?.length > 0 ? (
-                      <img src={listing.images[0]} alt={listing.title} className="w-full h-full object-cover" />
+                  <div className="h-48 overflow-hidden relative">
+                    {listing.images && listing.images.length > 0 ? (
+                      <img src={listing.images[0]} alt={listing.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
                     ) : (
-                      <span className="text-5xl">
-                        {listing.isFurnished ? '🛋️' : listing.category === 'villa' ? '🏡' : listing.category === 'apartment' ? '🏢' : '🏠'}
-                      </span>
+                      <div className="w-full h-full bg-gradient-to-br from-orange-100 to-orange-200 flex items-center justify-center">
+                        <span className="text-5xl">{listing.category === 'villa' ? '🏡' : listing.category === 'apartment' ? '🏢' : listing.category === 'land' ? '🌳' : '🏠'}</span>
+                      </div>
                     )}
-                    <span className={`absolute top-3 left-3 px-2.5 py-1 rounded-full text-xs font-bold text-white ${
-                      listing.type === 'sale' ? 'bg-blue-600' : listing.type === 'vacation' ? 'bg-orange-600' : 'bg-green-600'
-                    }`}>
+                    <span className={`absolute top-3 left-3 px-2.5 py-1 rounded-full text-xs font-bold text-white ${listing.type === 'sale' ? 'bg-blue-600' : listing.type === 'vacation' ? 'bg-orange-600' : 'bg-green-600'}`}>
                       {listing.type === 'sale' ? 'À vendre' : listing.type === 'vacation' ? 'Courte durée' : 'À louer'}
                     </span>
-                    {listing.isFurnished && (
-                      <span className="absolute top-3 right-3 bg-purple-600 text-white px-2 py-1 rounded-full text-xs font-bold">
-                        🛋️
-                      </span>
-                    )}
+                    {listing.isFurnished && <span className="absolute top-3 right-3 bg-purple-600 text-white px-2 py-1 rounded-full text-xs font-bold">🛋️</span>}
                   </div>
                   
-                  {/* Contenu */}
                   <div className="p-4">
                     <h3 className="font-bold text-gray-800 text-sm truncate">{listing.title}</h3>
-                    <p className="text-xs text-gray-500 flex items-center gap-1 mt-1">
-                      <FaMapMarkerAlt className="text-orange-500 flex-shrink-0" />
-                      {listing.city}{listing.district ? `, ${listing.district}` : ''}
-                    </p>
-                    
-                    {/* Description courte */}
-                    {listing.description && (
-                      <p className="text-xs text-gray-400 mt-1 line-clamp-2">{listing.description}</p>
-                    )}
+                    <p className="text-xs text-gray-500 mt-1"><FaMapMarkerAlt className="text-orange-500 inline" /> {listing.city}{listing.district ? `, ${listing.district}` : ''}</p>
+                    {listing.bedrooms > 0 && <p className="text-xs text-gray-400 mt-1">🛏️ {listing.bedrooms} ch • 📐 {listing.area_sqm}m²</p>}
                     
                     <div className="flex items-end justify-between mt-3 pt-3 border-t">
-                      <div>
-                        <span className="text-lg font-black text-orange-600">{formatPrice(listing.price)}</span>
-                        {listing.type === 'rent' && <span className="text-xs text-gray-500">/mois</span>}
-                        {listing.type === 'vacation' && <span className="text-xs text-gray-500">/nuit</span>}
-                      </div>
-                      
-                      {/* BOUTON VOIR DÉTAILS */}
-                      <Link 
-                        href={`/annonce/${listing.id}`}
-                        className="flex items-center gap-1.5 bg-orange-500 text-white px-4 py-2 rounded-full text-xs font-bold hover:bg-orange-600 transition-all shadow-md hover:shadow-lg group-hover:scale-105"
-                      >
-                        <FaEye className="text-xs" /> Voir détails
+                      <span className="text-lg font-black text-orange-600">{formatPrice(listing.price)}</span>
+                      <Link href={`/annonce/${listing.id}`} className="flex items-center gap-1 bg-orange-500 text-white px-4 py-2 rounded-full text-xs font-bold hover:bg-orange-600 transition-all">
+                        <FaEye /> Voir détails
                       </Link>
                     </div>
                   </div>
@@ -210,7 +136,6 @@ function PropertiesContent() {
           )}
         </section>
       </main>
-
       <Footer />
     </div>
   )

@@ -72,7 +72,7 @@ export function Navbar() {
                   {link.label}
                 </Link>
               ))}
-              <Link href="/login" className="ml-2 btn-primary text-sm !py-2">Espace Pro</Link>
+              <Link href="/register" className="ml-2 btn-primary text-sm !py-2">S'inscrire</Link>
             </nav>
 
             {/* Burger mobile */}
@@ -118,8 +118,8 @@ export function Navbar() {
               ))}
             </nav>
             <div className="p-5 border-t">
-              <Link href="/login" onClick={() => setIsOpen(false)} className="btn-primary w-full text-center text-lg !py-3.5">
-                ⚡ Espace Pro
+              <Link href="/register" onClick={() => setIsOpen(false)} className="btn-primary w-full text-center text-lg !py-3.5">
+                ⚡ S'inscrire
               </Link>
             </div>
           </div>

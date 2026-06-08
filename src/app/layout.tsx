@@ -2,7 +2,9 @@ import type { Metadata } from 'next'
 import './globals.css'
 import { AnalyticsTracker } from '@/components/analytics/Tracker'
 import { ScrollToTop } from '@/components/common/ScrollToTop'
+import { ChatBot } from "@/components/chatbot/ChatBot"
 import { CookieBanner } from '@/components/common/CookieBanner'
+import { TrialBanner } from '@/components/common/TrialBanner'
 
 export const metadata: Metadata = {
   title: 'ImmoStar | La star de l\'immobilier en Côte d\'Ivoire',
@@ -19,9 +21,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
       </head>
       <body className="bg-gray-50 text-gray-800 antialiased">
+        <TrialBanner />
         <AnalyticsTracker />
         {children}
         <ScrollToTop />
+        <ChatBot />
+import { ChatBot } from "@/components/chatbot/ChatBot"
         <CookieBanner />
       </body>
     </html>
