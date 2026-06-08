@@ -4,17 +4,21 @@ import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { Navbar } from '@/components/common/Navbar'
 import { Footer } from '@/components/common/Footer'
+import { useLiveListings } from '@/hooks/useLiveListings'
 import Link from 'next/link'
-import { FaMapMarkerAlt, FaSearch, FaEye } from 'react-icons/fa'
+import { FaMapMarkerAlt, FaSearch, FaEye, FaSync } from 'react-icons/fa'
 
 function PropertiesContent() {
   const searchParams = useSearchParams()
   const [mounted, setMounted] = useState(false)
-  const [listings, setListings] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [cityFilter, setCityFilter] = useState('')
   const [typeFilter, setTypeFilter] = useState('')
+
+  const { listings, loading, lastUpdate, refresh } = useLiveListings({
+    city: cityFilter || undefined,
+    type: typeFilter || undefined,
+  })
 
   useEffect(() => {
     const type = searchParams.get('type')
@@ -25,48 +29,35 @@ function PropertiesContent() {
     setMounted(true)
   }, [searchParams])
 
-  useEffect(() => {
-    if (mounted) fetchListings()
-  }, [mounted])
-
-  const fetchListings = async () => {
-    setLoading(true)
-    try {
-      const res = await fetch('/api/listings')
-      const data = await res.json()
-      setListings(data)
-    } catch (error) {
-      console.error('Erreur:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
-
   const formatPrice = (price: number) => {
     if (!price) return '0 FCFA'
     if (price >= 1000000) return `${(price / 1000000).toFixed(0)}M FCFA`
     return price.toLocaleString() + ' FCFA'
   }
 
-  const filtered = listings.filter(l => {
-    if (typeFilter && l.type !== typeFilter) return false
-    if (cityFilter && l.city !== cityFilter) return false
-    if (search && !l.title?.toLowerCase().includes(search.toLowerCase()) && !l.city?.toLowerCase().includes(search.toLowerCase())) return false
-    return true
-  })
-
-  if (!mounted) return <div className="min-h-screen"><Navbar /><div className="flex justify-center py-20"><span className="loader" /></div><Footer /></div>
+  const filtered = search
+    ? listings.filter((l: any) => l.title?.toLowerCase().includes(search.toLowerCase()) || l.city?.toLowerCase().includes(search.toLowerCase()))
+    : listings
 
   const title = typeFilter === 'sale' ? '🏠 Biens à vendre' : typeFilter === 'rent' ? '🔑 Biens à louer' : cityFilter ? `📍 Biens à ${cityFilter}` : '🏠 Toutes les annonces'
+
+  if (!mounted) return <div className="min-h-screen"><Navbar /><div className="flex justify-center py-20"><span className="loader" /></div><Footer /></div>
 
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
       <main className="flex-1">
         <section className="bg-gradient-to-r from-orange-500 to-orange-600 text-white py-8">
-          <div className="container-main">
-            <h1 className="text-2xl sm:text-3xl font-black mb-2">{title}</h1>
-            <p className="text-orange-100 text-sm">{filtered.length} bien(s) trouvé(s)</p>
+          <div className="container-main flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-black mb-2">{title}</h1>
+              <p className="text-orange-100 text-sm">
+                {filtered.length} bien(s) • 
+                <button onClick={refresh} className="ml-2 underline hover:text-white">
+                  <FaSync className={`inline text-xs ${loading ? 'animate-spin' : ''}`} /> Actualiser
+                </button>
+              </p>
+            </div>
           </div>
         </section>
 
@@ -95,37 +86,28 @@ function PropertiesContent() {
           {loading ? (
             <div className="flex justify-center py-20"><span className="loader" /></div>
           ) : filtered.length === 0 ? (
-            <div className="text-center py-20">
-              <div className="text-6xl mb-4">🏠</div>
-              <h3 className="text-xl font-bold">Aucun bien trouvé</h3>
-            </div>
+            <div className="text-center py-20"><div className="text-6xl mb-4">🏠</div><h3 className="text-xl font-bold">Aucun bien trouvé</h3></div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {filtered.map(listing => (
+              {filtered.map((listing: any) => (
                 <div key={listing.id} className="bg-white rounded-2xl shadow-sm overflow-hidden hover:shadow-lg hover:-translate-y-1 transition-all group">
-                  {/* Image */}
                   <div className="h-48 overflow-hidden relative">
                     {listing.images && listing.images.length > 0 ? (
-                      <img src={listing.images[0]} alt={listing.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                      <img src={typeof listing.images[0] === 'string' ? listing.images[0] : listing.images[0]} alt={listing.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
                     ) : (
-                      <div className="w-full h-full bg-gradient-to-br from-orange-100 to-orange-200 flex items-center justify-center">
-                        <span className="text-5xl">{listing.category === 'villa' ? '🏡' : listing.category === 'apartment' ? '🏢' : listing.category === 'land' ? '🌳' : '🏠'}</span>
-                      </div>
+                      <div className="w-full h-full bg-gradient-to-br from-orange-100 to-orange-200 flex items-center justify-center"><span className="text-5xl">🏠</span></div>
                     )}
-                    <span className={`absolute top-3 left-3 px-2.5 py-1 rounded-full text-xs font-bold text-white ${listing.type === 'sale' ? 'bg-blue-600' : listing.type === 'vacation' ? 'bg-orange-600' : 'bg-green-600'}`}>
+                    <span className={`absolute top-3 left-3 px-2.5 py-1 rounded-full text-xs font-bold text-white ${listing.type === 'sale' ? 'bg-blue-600' : 'bg-green-600'}`}>
                       {listing.type === 'sale' ? 'À vendre' : listing.type === 'vacation' ? 'Courte durée' : 'À louer'}
                     </span>
                     {listing.isFurnished && <span className="absolute top-3 right-3 bg-purple-600 text-white px-2 py-1 rounded-full text-xs font-bold">🛋️</span>}
                   </div>
-                  
                   <div className="p-4">
                     <h3 className="font-bold text-gray-800 text-sm truncate">{listing.title}</h3>
                     <p className="text-xs text-gray-500 mt-1"><FaMapMarkerAlt className="text-orange-500 inline" /> {listing.city}{listing.district ? `, ${listing.district}` : ''}</p>
-                    {listing.bedrooms > 0 && <p className="text-xs text-gray-400 mt-1">🛏️ {listing.bedrooms} ch • 📐 {listing.area_sqm}m²</p>}
-                    
                     <div className="flex items-end justify-between mt-3 pt-3 border-t">
                       <span className="text-lg font-black text-orange-600">{formatPrice(listing.price)}</span>
-                      <Link href={`/annonce/${listing.id}`} className="flex items-center gap-1 bg-orange-500 text-white px-4 py-2 rounded-full text-xs font-bold hover:bg-orange-600 transition-all">
+                      <Link href={`/annonce/${listing.id}`} className="flex items-center gap-1 bg-orange-500 text-white px-4 py-2 rounded-full text-xs font-bold hover:bg-orange-600">
                         <FaEye /> Voir détails
                       </Link>
                     </div>

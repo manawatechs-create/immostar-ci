@@ -2,9 +2,9 @@ import type { Metadata } from 'next'
 import './globals.css'
 import { AnalyticsTracker } from '@/components/analytics/Tracker'
 import { ScrollToTop } from '@/components/common/ScrollToTop'
-import { ChatBot } from "@/components/chatbot/ChatBot"
 import { CookieBanner } from '@/components/common/CookieBanner'
 import { TrialBanner } from '@/components/common/TrialBanner'
+import { ChatBot } from '@/components/chatbot/ChatBot'
 
 export const metadata: Metadata = {
   title: 'ImmoStar | La star de l\'immobilier en Côte d\'Ivoire',
@@ -26,7 +26,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {children}
         <ScrollToTop />
         <ChatBot />
-import { ChatBot } from "@/components/chatbot/ChatBot"
         <CookieBanner />
       </body>
     </html>

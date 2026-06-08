@@ -3,30 +3,35 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { FaClock, FaTimes } from 'react-icons/fa'
-import { FEATURES, getTrialDaysLeft } from '@/lib/features'
+import { useFeature } from '@/hooks/useFeature'
 
 export function TrialBanner() {
   const [visible, setVisible] = useState(false)
   const [daysLeft, setDaysLeft] = useState(90)
+  const showBanner = useFeature('showUpgradeBanner')
+  const trialActive = useFeature('trialActive')
 
   useEffect(() => {
-    if (!FEATURES.SHOW_UPGRADE_BANNER && !FEATURES.TRIAL_ACTIVE) return
+    if (!showBanner && !trialActive) return
 
     const trialStart = localStorage.getItem('trial_start')
     if (!trialStart) {
       localStorage.setItem('trial_start', new Date().toISOString())
-      if (FEATURES.TRIAL_ACTIVE) {
+      if (trialActive) {
         setVisible(true)
-        setDaysLeft(FEATURES.TRIAL_PERIOD_DAYS)
+        setDaysLeft(90)
       }
-    } else if (FEATURES.SHOW_UPGRADE_BANNER) {
-      const remaining = getTrialDaysLeft(trialStart)
-      if (remaining <= 10) {
+    } else if (showBanner) {
+      const start = new Date(trialStart)
+      const now = new Date()
+      const diff = Math.floor((now.getTime() - start.getTime()) / 86400000)
+      const remaining = 90 - diff
+      if (remaining <= 10 && remaining > 0) {
         setVisible(true)
         setDaysLeft(remaining)
       }
     }
-  }, [])
+  }, [showBanner, trialActive])
 
   if (!visible) return null
 
@@ -34,17 +39,10 @@ export function TrialBanner() {
     <div className="bg-gradient-to-r from-orange-500 to-orange-600 text-white py-2 px-4 text-center text-sm relative">
       <p className="flex items-center justify-center gap-2">
         <FaClock />
-        {daysLeft > 10 ? (
-          <>🎉 Période d&apos;essai gratuite • Profitez-en !</>
-        ) : (
-          <>⚠️ Plus que <strong>{daysLeft} jours</strong> d&apos;essai gratuit • 
-            <Link href="/upgrade" className="underline font-bold ml-1">Passer Pro maintenant</Link>
-          </>
-        )}
+        {daysLeft > 10 ? 'Periode d\'essai gratuite' : `Plus que ${daysLeft} jours d'essai`}
+        {daysLeft <= 10 && <Link href="/upgrade" className="underline font-bold ml-1">Passer Pro</Link>}
       </p>
-      <button onClick={() => setVisible(false)} className="absolute right-4 top-1/2 -translate-y-1/2">
-        <FaTimes className="text-xs" />
-      </button>
+      <button onClick={() => setVisible(false)} className="absolute right-4 top-1/2 -translate-y-1/2"><FaTimes className="text-xs" /></button>
     </div>
   )
 }
